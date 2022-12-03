@@ -1,25 +1,24 @@
 import collections
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.animation import FuncAnimation
+from matplotlib import colors   
 import collections
 import argparse
 from scapy.all import *
 import time
+import atexit
 
-def my_function():
-    # get data
-    pac.popleft()
-    pac.append(10)
-    # clear axis
-    ax.cla()
-    # plot packet
-    ax.plot(pac)
-    plt.xlabel("Number of packets")
-    plt.ylabel("Time")
-    ax.scatter(len(pac)-1, pac[-1])
-    ax.text(len(pac)-1, pac[-1]+2, "{}%".format(pac[-1]))
-    ax.set_ylim(0,100)
+def graphshow(counter):
+    print(counter)
+    tim=[]
+    for j in range(1,len(counter)+1):
+        tim.append(j)
+    print(tim)
+    plt.bar(tim,counter)
+    plt.xlabel("TIME")
+    plt.ylabel("Number of packets")
+    plt.show()
+    
 
 
 def get_args():
@@ -34,28 +33,37 @@ def get_args():
 
 def printing(packet):
     global count
+    global start_time
+    global co
+    global counter
     if args.store:
         wrpcap(args.store,packet,append=True)
     print("="*90,count,"="*90)
     count+=1
     if args.graph:
-        pac= collections.deque(np.zeros(10))
-        fig = plt.figure(figsize=(12,6), facecolor='#DEDEDE')
-        ax = plt.subplot(121)
-        ax.set_facecolor('#DEDEDE')
-        ani = FuncAnimation(fig, my_function, interval=1000)
-        plt.show()
+        if(time.time()-start_time>1):
+            counter.append(co)
+            co=0
+            start_time=time.time()
+        else:
+            co=co+1  
     if args.verbose:
         packet.show()
     else:
         print(packet.summary())
-        
-    
+
+def gr(counter):
+    print(counter)           
 
 
 
 
 count=1
+start_time=time.time()
+co=0
+counter=[]
 if __name__=="__main__":
 	args=get_args()
 	sniff(iface=args.interface,filter=args.filter ,count=args.count,prn=printing,store=args.store)
+	if args.graph:
+		atexit.register(graphshow(counter))
